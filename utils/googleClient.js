@@ -93,7 +93,7 @@ async function fetchAndSaveReport2(userId, accountId) {
     );
   }
 }
-async function fetchAndSaveReportCron(userId, accountId, dateRange = "TODAY") {
+async function fetchAndSaveReportCron(userId, accountId) {
   try {
 
     const auth = await getAuthorizedClient(userId, accountId);
@@ -106,15 +106,15 @@ async function fetchAndSaveReportCron(userId, accountId, dateRange = "TODAY") {
       dimensions: REPORT_CONFIG.adsense.dimensions,
     };
 
-    // Get report
+    // Get TODAY’s report
     const reportToday = await adsense.accounts.reports.generate({
       ...baseOptions,
-      dateRange: dateRange,
+      dateRange: "TODAY",
     });
 
     if (!reportToday?.data?.rows || reportToday.data.rows.length === 0) {
       console.warn(
-        `[CRON] No rows returned for ${dateRange} (userId=${userId}, accountId=${accountId})`
+        `[CRON] No rows returned for TODAY (userId=${userId}, accountId=${accountId})`
       );
       return;
     }
@@ -203,8 +203,7 @@ async function fetchAdManagerReportCron(
   userId,
   networkId,
   accessToken,
-  refreshToken,
-  dateRangeType = "TODAY"
+  refreshToken
 ) {
   try {
     const bearer = await getFreshAccessToken(accessToken, refreshToken);
@@ -223,7 +222,7 @@ async function fetchAdManagerReportCron(
     `);
 
     // Helper to run report for a given dateRangeType
-    await fetchAdManagerReportToday(userId, bearer, networkId, dateRangeType);
+    await fetchAdManagerReportToday(userId, bearer, networkId);
   } catch (error) {
     console.error(" Error in fetchAdManagerReports:", error);
   }
