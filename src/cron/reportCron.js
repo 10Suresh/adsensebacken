@@ -9,7 +9,8 @@ const { deleteOldAdManagerReports } = require("../helper/admanager/adxCron/delet
 const { deleteOldAdsenseReports } = require("../helper/adSense/adsenseCron/deleteData")
 // Run every 1 hour
 cron.schedule("0 * * * *", async () => {
-  console.log("⏳ Starting AdSense & AdManager cron job...");
+  const startTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+  console.log(`⏳ [${startTime}] Starting AdSense & AdManager cron job...`);
 
   try {
     const users = await User.find();
@@ -126,8 +127,12 @@ cron.schedule("0 * * * *", async () => {
       })
     );
 
-    console.log("🎉 Cron finished successfully!");
+    const endTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    console.log(`🎉 [${endTime}] Cron finished successfully!`);
   } catch (err) {
-    console.error("❌ Global Cron failed:", err.message);
+    const errorTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    console.error(`❌ [${errorTime}] Global Cron failed:`, err.message);
   }
+}, {
+  timezone: "Asia/Kolkata"
 });
