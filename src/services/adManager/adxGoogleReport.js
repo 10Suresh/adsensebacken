@@ -151,7 +151,7 @@ async function fetchAdManagerReportLast30Days(userId, bearer, networkId) {
         console.error("❌ Error in fetchAdManagerReportLast30Days:", error);
     }
 }
-async function fetchAdManagerReportToday(userId, bearer, networkId) {
+async function fetchAdManagerReportToday(userId, bearer, networkId, dateRangeType = "TODAY") {
     if (!networkId) {
         console.log("Network id not found");
     }
@@ -183,7 +183,7 @@ async function fetchAdManagerReportToday(userId, bearer, networkId) {
                 "AD_EXCHANGE_LINE_ITEM_LEVEL_CTR",
                 "AD_EXCHANGE_COST_PER_CLICK",
             ],
-            dateRangeType: "TODAY", // ✅ only today's data
+            dateRangeType: dateRangeType, // ✅ Use the parameter
             reportCurrency: "USD",
             timeZoneType: "PUBLISHER",
         };
