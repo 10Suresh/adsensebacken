@@ -3,7 +3,7 @@ const soap = require("soap");
 const { getFreshAccessToken, getAuthorizedClient } = require("../src/services/googleAuth")
 const AdsenseRowSchema = require("../src/models/AdsenseRowSchema");
 const REPORT_CONFIG = require("../config/reportConfig");
-const { fetchAdManagerReportLast30Days, fetchAdManagerReportToday } = require("../src/services/adManager/adxGoogleReport")
+const { fetchAdManagerReportLast30Days, fetchAdManagerReportToday , fetchAdManagerReportYesterday} = require("../src/services/adManager/adxGoogleReport")
 //adsens data fetch
 async function fetchAndSaveReport2(userId, accountId) {
   try {
@@ -93,6 +93,82 @@ async function fetchAndSaveReport2(userId, accountId) {
     );
   }
 }
+async function fetchAndSaveReportYesterdayCron(userId, accountId) {
+  try {
+    const auth = await getAuthorizedClient(userId, accountId);
+    const adsense = google.adsense("v2");
+
+    const baseOptions = {
+      auth,
+      account: `accounts/${accountId}`,
+      metrics: REPORT_CONFIG.adsense.metrics,
+      dimensions: REPORT_CONFIG.adsense.dimensions,
+    };
+
+    // Get YESTERDAY's report
+    const reportYesterday = await adsense.accounts.reports.generate({
+      ...baseOptions,
+      dateRange: "YESTERDAY",
+    });
+
+    if (!reportYesterday?.data?.rows || reportYesterday.data.rows.length === 0) {
+      console.warn(
+        `[CRON] No rows returned for YESTERDAY (userId=${userId}, accountId=${accountId})`
+      );
+      return;
+    }
+    const bulkOps = [];
+
+    for (const row of reportYesterday.data.rows) {
+      const [
+        dateStr,
+        domain,
+        country,
+        earnings,
+        clicks,
+        pageViews,
+        impressions,
+        ctr,
+        cpc,
+        rpm,
+      ] = row.cells.map((c) => c.value);
+      const date = dateStr;
+
+      bulkOps.push({
+        updateOne: {
+          filter: { userId, accountId, date, domain, country },
+          update: {
+            $set: {
+              metrics: {
+                estimatedEarnings: parseFloat(earnings) || 0,
+                clicks: parseInt(clicks) || 0,
+                pageViews: parseInt(pageViews) || 0,
+                impressions: parseInt(impressions) || 0,
+                ctr: parseFloat(ctr) || 0,
+                cpc: parseFloat(cpc) || 0,
+                rpm: parseFloat(rpm) || 0,
+              },
+              fetchedAt: new Date(),
+            },
+          },
+          upsert: true, //  will only insert new or update if changed
+        },
+      });
+    }
+
+    if (bulkOps.length > 0) {
+      const result = await AdsenseRowSchema.bulkWrite(bulkOps, {
+        ordered: false,
+      });
+    }
+  } catch (err) {
+    console.error(
+      `[CRON ERROR] fetchAndSaveReportYesterdayCron failed (userId=${userId}, accountId=${accountId}):`,
+      err
+    );
+  }
+}
+
 async function fetchAndSaveReportCron(userId, accountId) {
   try {
 
@@ -228,10 +304,41 @@ async function fetchAdManagerReportCron(
   }
 }
 
+async function fetchAdManagerReportYesterdayCron(
+  userId,
+  networkId,
+  accessToken,
+  refreshToken
+) {
+  try {
+    const bearer = await getFreshAccessToken(accessToken, refreshToken);
+
+    const WSDL =
+      "https://ads.google.com/apis/ads/publisher/v202505/ReportService?wsdl";
+    const client = await soap.createClientAsync(WSDL);
+    client.addHttpHeader("Authorization", `Bearer ${bearer}`);
+
+    const NS = "https://www.google.com/apis/ads/publisher/v202505";
+    client.addSoapHeader(`
+      <tns:RequestHeader xmlns:tns="${NS}">
+        <tns:networkCode>${networkId}</tns:networkCode>
+        <tns:applicationName>DashboardApp</tns:applicationName>
+      </tns:RequestHeader>
+    `);
+
+    // Helper to run report for a given dateRangeType
+    await fetchAdManagerReportYesterday(userId, bearer, networkId);
+  } catch (error) {
+    console.error(" Error in fetchAdManagerReportYesterdayCron:", error);
+  }
+}
+
 module.exports = {
   getAuthorizedClient,
   fetchAdManagerReport,
   fetchAndSaveReport2,
   fetchAndSaveReportCron,
+  fetchAndSaveReportYesterdayCron,
   fetchAdManagerReportCron,
+  fetchAdManagerReportYesterdayCron,
 };

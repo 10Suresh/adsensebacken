@@ -37,47 +37,6 @@ async function getAuthorizedClient(userId, accountId) {
 
     return oauth2Client;
 }
-
-// async function fetchAndSaveSites(userId, accountId) {
-//     try {
-//         const auth = await getAuthorizedClient(userId, accountId);
-//         const adsense = google.adsense("v2");
-
-//         const siteList = await adsense.accounts.sites.list({
-//             parent: `accounts/${accountId}`,
-//             auth,
-//         });
-
-//         const sites = siteList.data.sites || [];
-
-
-//         // ✅ Filter only READY sites
-//         const readySites = sites.filter(site => site.state === "READY");
-//         if (readySites.length) {
-//             for (const site of readySites) {
-//                 await AdsenseSiteSchema.findOneAndUpdate(
-//                     { userId, accountId, name: site.name },
-//                     {
-//                         userId,
-//                         accountId,
-//                         name: site.name,
-//                         domain: site.domain,
-//                         state: site.state,
-//                         autoAdsEnabled: site.autoAdsEnabled,
-//                     },
-//                     { upsert: true, new: true }
-//                 );
-//             }
-//         }
-
-//         // ✅ Return only READY sites
-//         return readySites;
-
-//     } catch (err) {
-//         console.error("Error fetching AdSense sites:", err.message);
-//         throw err;
-//     }
-// }
 async function fetchAndSaveSites(userId, accountId) {
     try {
         const auth = await getAuthorizedClient(userId, accountId);

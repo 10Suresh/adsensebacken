@@ -2,15 +2,18 @@ const cron = require("node-cron");
 const User = require("../models/User");
 const {
   fetchAndSaveReportCron,
+  fetchAndSaveReportYesterdayCron,
   fetchAdManagerReportCron,
+  fetchAdManagerReportYesterdayCron,
 } = require("../../utils/googleClient");
 const { fetchAndSaveSites } = require("../services/googleAuth")
 const { deleteOldAdManagerReports } = require("../helper/admanager/adxCron/deleteData");
 const { deleteOldAdsenseReports } = require("../helper/adSense/adsenseCron/deleteData")
-// Run every 1 hour
+
+// 🔹 Main Cron: Run every 1 hour (at minute 0)
 cron.schedule("0 * * * *", async () => {
   const startTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-  console.log(`⏳ [${startTime}] Starting AdSense & AdManager cron job...`);
+  console.log(`⏳ [${startTime}] Starting AdSense & AdManager main cron job...`);
 
   try {
     const users = await User.find();
@@ -128,11 +131,100 @@ cron.schedule("0 * * * *", async () => {
     );
 
     const endTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-    console.log(`🎉 [${endTime}] Cron finished successfully!`);
+    console.log(`🎉 [${endTime}] Main Cron finished successfully!`);
   } catch (err) {
     const errorTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-    console.error(`❌ [${errorTime}] Global Cron failed:`, err.message);
+    console.error(`❌ [${errorTime}] Global Main Cron failed:`, err.message);
   }
 }, {
+  timezone: "Asia/Kolkata"
+});
+
+// 🔹 Yesterday Cron logic
+const runYesterdayCronJob = async () => {
+  const startTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+  console.log(`⏳ [${startTime}] Starting AdSense Yesterday cron job...`);
+
+  try {
+    const users = await User.find();
+
+    // Process each user in parallel
+    await Promise.all(
+      users.map(async (user) => {
+        const yesterdayTasks = [];
+        
+        // 🔹 Prepare AdSense tasks for Yesterday
+        if (Array.isArray(user.adsenseAccounts)) {
+          user.adsenseAccounts.forEach(
+            ({ accountId, accessToken, refreshToken, email }) => {
+              if (accountId && refreshToken) {
+                // Fetch Yesterday's AdSense reports
+                yesterdayTasks.push(
+                  fetchAndSaveReportYesterdayCron(
+                    user._id,
+                    accountId,
+                    accessToken,
+                    refreshToken
+                  )
+                    .then(() =>
+                      console.log(
+                        `✅ AdSense yesterday report saved | User: ${user._id} | Account: ${accountId} | Email: ${email}`
+                      )
+                    )
+                    .catch((err) =>
+                      console.error(
+                        `❌ AdSense yesterday error | User: ${user._id} | Account: ${accountId} | Email: ${email} | ${err.message}`
+                      )
+                    )
+                );
+              }
+            }
+          );
+        }
+
+        // 🔹 Prepare AdManager tasks for Yesterday
+        if (Array.isArray(user.adManagerAccounts)) {
+          user.adManagerAccounts.forEach(
+            ({ networkId, accessToken, refreshToken }) => {
+              if (networkId && refreshToken) {
+                // Fetch Yesterday's reports
+                yesterdayTasks.push(
+                  fetchAdManagerReportYesterdayCron(
+                    user._id,
+                    networkId,
+                    accessToken,
+                    refreshToken
+                  )
+                    .then(() =>
+                      console.log(
+                        `✅ Ad Manager yesterday report saved | User: ${user._id} | Network: ${networkId}`
+                      )
+                    )
+                    .catch((err) =>
+                      console.error(
+                        `❌ Ad Manager yesterday error | User: ${user._id} | Network: ${networkId} | ${err.message}`
+                      )
+                    )
+                );
+              }
+            }
+          );
+        }
+
+        // 🔹 Run yesterday tasks in parallel for this user
+        await Promise.all(yesterdayTasks);
+      })
+    );
+
+    const endTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    console.log(`🎉 [${endTime}] Yesterday Cron finished successfully!`);
+  } catch (err) {
+    const errorTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    console.error(`❌ [${errorTime}] Global Yesterday Cron failed:`, err.message);
+  }
+};
+
+// 🔹 Schedule Yesterday Cron: 12:30 AM, 1:30 AM, 2:30 AM, 3:30 AM
+cron.schedule("30 0,1,2,3 * * *", runYesterdayCronJob, {
   timezone: "Asia/Kolkata"
 });
