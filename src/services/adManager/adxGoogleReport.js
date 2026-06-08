@@ -281,8 +281,15 @@ async function fetchAdManagerReportToday(userId, bearer, networkId) {
 
         if (rows.length > 0) {
             const data = await adManagerReportSchema.bulkWrite(rows, { ordered: false });
+            return {
+                total: rows.length,
+                upserted: data?.upsertedCount || 0,
+                modified: data?.modifiedCount || 0,
+                inserted: data?.insertedCount || 0
+            };
         } else {
             console.log("⚠️ No TODAY rows parsed");
+            return { total: 0, upserted: 0, modified: 0, inserted: 0 };
         }
     } catch (error) {
         console.error("❌ Error in fetchAdManagerReportToday:", error);
@@ -419,8 +426,15 @@ async function fetchAdManagerReportYesterday(userId, bearer, networkId) {
 
         if (rows.length > 0) {
             const data = await adManagerReportSchema.bulkWrite(rows, { ordered: false });
+            return {
+                total: rows.length,
+                upserted: data?.upsertedCount || 0,
+                modified: data?.modifiedCount || 0,
+                inserted: data?.insertedCount || 0
+            };
         } else {
             console.log("⚠️ No YESTERDAY rows parsed");
+            return { total: 0, upserted: 0, modified: 0, inserted: 0 };
         }
     } catch (error) {
         console.error("❌ Error in fetchAdManagerReportYesterday:", error);

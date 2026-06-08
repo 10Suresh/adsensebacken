@@ -38,9 +38,9 @@ cron.schedule("0 * * * *", async () => {
                     accessToken,
                     refreshToken
                   )
-                    .then(() =>
+                    .then((result) =>
                       console.log(
-                        `✅ AdSense report saved | User: ${user._id} | Account: ${accountId} | Email: ${email}`
+                        `✅ AdSense report saved | User: ${user._id} | Account: ${accountId} | Email: ${email} | Total: ${result?.total||0}, Upserted: ${result?.upserted||0}, Modified: ${result?.modified||0}, Inserted: ${result?.inserted||0}`
                       )
                     )
                     .catch((err) =>
@@ -94,9 +94,9 @@ cron.schedule("0 * * * *", async () => {
                     accessToken,
                     refreshToken
                   )
-                    .then(() =>
+                    .then((result) =>
                       console.log(
-                        `✅ Ad Manager report saved | User: ${user._id} | Network: ${networkId}`
+                        `✅ Ad Manager report saved | User: ${user._id} | Network: ${networkId} | Total: ${result?.total||0}, Upserted: ${result?.upserted||0}, Modified: ${result?.modified||0}, Inserted: ${result?.inserted||0}`
                       )
                     )
                     .catch((err) =>
@@ -166,9 +166,9 @@ const runYesterdayCronJob = async () => {
                     accessToken,
                     refreshToken
                   )
-                    .then(() =>
+                    .then((result) =>
                       console.log(
-                        `✅ AdSense yesterday report saved | User: ${user._id} | Account: ${accountId} | Email: ${email}`
+                        `✅ AdSense yesterday report saved | User: ${user._id} | Account: ${accountId} | Email: ${email} | Total: ${result?.total||0}, Upserted: ${result?.upserted||0}, Modified: ${result?.modified||0}, Inserted: ${result?.inserted||0}`
                       )
                     )
                     .catch((err) =>
@@ -195,9 +195,9 @@ const runYesterdayCronJob = async () => {
                     accessToken,
                     refreshToken
                   )
-                    .then(() =>
+                    .then((result) =>
                       console.log(
-                        `✅ Ad Manager yesterday report saved | User: ${user._id} | Network: ${networkId}`
+                        `✅ Ad Manager yesterday report saved | User: ${user._id} | Network: ${networkId} | Total: ${result?.total||0}, Upserted: ${result?.upserted||0}, Modified: ${result?.modified||0}, Inserted: ${result?.inserted||0}`
                       )
                     )
                     .catch((err) =>
