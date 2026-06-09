@@ -196,7 +196,7 @@ const runYesterdayCronJob = async () => {
     await Promise.all(
       users.map(async (user) => {
         const yesterdayTasks = [];
-        
+
         // 🔹 Prepare AdSense tasks for Yesterday
         if (Array.isArray(user.adsenseAccounts)) {
           user.adsenseAccounts.forEach(
@@ -274,9 +274,15 @@ function initCrons() {
     timezone: "Asia/Kolkata",
     recoverMissedExecutions: true,
   });
+  // 12:01 AM
+  cron.schedule("1 0 * * *", runYesterdayCronJob, {
+    timezone: "Asia/Kolkata",
+     recoverMissedExecutions: true,
+  });
 
   // 12:30 AM, 1:30 AM, 2:30 AM, 3:30 AM IST
   cron.schedule("30 0,1,2,3 * * *", runYesterdayCronJob, {
+  // cron.schedule("18 0 * * *", runYesterdayCronJob, {
     timezone: "Asia/Kolkata",
     recoverMissedExecutions: true,
   });
