@@ -3,6 +3,7 @@ const soap = require("soap");
 const csvParser = require("csv-parser");
 const zlib = require("zlib");
 const axios = require("axios");
+const { fromBulkWriteResult } = require("../../../utils/bulkWriteStats");
 async function fetchAdManagerReportLast30Days(userId, bearer, networkId) {
     try {
         const WSDL =
@@ -145,8 +146,10 @@ async function fetchAdManagerReportLast30Days(userId, bearer, networkId) {
 
         // ✅ Step 6: Bulk upsert into DB
         if (rows.length > 0) {
-            await adManagerReportSchema.bulkWrite(rows, { ordered: false });
+            const result = await adManagerReportSchema.bulkWrite(rows, { ordered: false });
+            return fromBulkWriteResult(result, rows.length);
         }
+        return fromBulkWriteResult(null, 0);
     } catch (error) {
         console.error("❌ Error in fetchAdManagerReportLast30Days:", error);
     }
@@ -280,17 +283,11 @@ async function fetchAdManagerReportToday(userId, bearer, networkId) {
         });
 
         if (rows.length > 0) {
-            const data = await adManagerReportSchema.bulkWrite(rows, { ordered: false });
-            return {
-                total: rows.length,
-                upserted: data?.upsertedCount || 0,
-                modified: data?.modifiedCount || 0,
-                inserted: data?.insertedCount || 0
-            };
-        } else {
-            console.log("⚠️ No TODAY rows parsed");
-            return { total: 0, upserted: 0, modified: 0, inserted: 0 };
+            const result = await adManagerReportSchema.bulkWrite(rows, { ordered: false });
+            return fromBulkWriteResult(result, rows.length);
         }
+        console.log("⚠️ No TODAY rows parsed");
+        return fromBulkWriteResult(null, 0);
     } catch (error) {
         console.error("❌ Error in fetchAdManagerReportToday:", error);
     }
@@ -425,17 +422,11 @@ async function fetchAdManagerReportYesterday(userId, bearer, networkId) {
         });
 
         if (rows.length > 0) {
-            const data = await adManagerReportSchema.bulkWrite(rows, { ordered: false });
-            return {
-                total: rows.length,
-                upserted: data?.upsertedCount || 0,
-                modified: data?.modifiedCount || 0,
-                inserted: data?.insertedCount || 0
-            };
-        } else {
-            console.log("⚠️ No YESTERDAY rows parsed");
-            return { total: 0, upserted: 0, modified: 0, inserted: 0 };
+            const result = await adManagerReportSchema.bulkWrite(rows, { ordered: false });
+            return fromBulkWriteResult(result, rows.length);
         }
+        console.log("⚠️ No YESTERDAY rows parsed");
+        return fromBulkWriteResult(null, 0);
     } catch (error) {
         console.error("❌ Error in fetchAdManagerReportYesterday:", error);
     }

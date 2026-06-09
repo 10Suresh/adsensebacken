@@ -4,6 +4,7 @@ const { getFreshAccessToken, getAuthorizedClient } = require("../src/services/go
 const AdsenseRowSchema = require("../src/models/AdsenseRowSchema");
 const REPORT_CONFIG = require("../config/reportConfig");
 const { fetchAdManagerReportLast30Days, fetchAdManagerReportToday , fetchAdManagerReportYesterday} = require("../src/services/adManager/adxGoogleReport")
+const { fromBulkWriteResult } = require("./bulkWriteStats");
 //adsens data fetch
 async function fetchAndSaveReport2(userId, accountId) {
   try {
@@ -115,7 +116,7 @@ async function fetchAndSaveReportYesterdayCron(userId, accountId) {
       console.warn(
         `[CRON] No rows returned for YESTERDAY (userId=${userId}, accountId=${accountId})`
       );
-      return;
+      return fromBulkWriteResult(null, 0);
     }
     const bulkOps = [];
 
@@ -160,14 +161,9 @@ async function fetchAndSaveReportYesterdayCron(userId, accountId) {
       const result = await AdsenseRowSchema.bulkWrite(bulkOps, {
         ordered: false,
       });
-      return {
-        total: bulkOps.length,
-        upserted: result?.upsertedCount || 0,
-        modified: result?.modifiedCount || 0,
-        inserted: result?.insertedCount || 0
-      };
+      return fromBulkWriteResult(result, bulkOps.length);
     }
-    return { total: 0, upserted: 0, modified: 0, inserted: 0 };
+    return fromBulkWriteResult(null, 0);
   } catch (err) {
     console.error(
       `[CRON ERROR] fetchAndSaveReportYesterdayCron failed (userId=${userId}, accountId=${accountId}):`,
@@ -199,7 +195,7 @@ async function fetchAndSaveReportCron(userId, accountId) {
       console.warn(
         `[CRON] No rows returned for TODAY (userId=${userId}, accountId=${accountId})`
       );
-      return;
+      return fromBulkWriteResult(null, 0);
     }
     const bulkOps = [];
 
@@ -245,14 +241,9 @@ async function fetchAndSaveReportCron(userId, accountId) {
       const result = await AdsenseRowSchema.bulkWrite(bulkOps, {
         ordered: false,
       });
-      return {
-        total: bulkOps.length,
-        upserted: result?.upsertedCount || 0,
-        modified: result?.modifiedCount || 0,
-        inserted: result?.insertedCount || 0
-      };
+      return fromBulkWriteResult(result, bulkOps.length);
     }
-    return { total: 0, upserted: 0, modified: 0, inserted: 0 };
+    return fromBulkWriteResult(null, 0);
   } catch (err) {
     console.error(
       `[CRON ERROR] fetchAndSaveReportNew failed (userId=${userId}, accountId=${accountId}):`,
@@ -311,7 +302,6 @@ async function fetchAdManagerReportCron(
       </tns:RequestHeader>
     `);
 
-    // Helper to run report for a given dateRangeType
     return await fetchAdManagerReportToday(userId, bearer, networkId);
   } catch (error) {
     console.error(" Error in fetchAdManagerReports:", error);
@@ -340,7 +330,6 @@ async function fetchAdManagerReportYesterdayCron(
       </tns:RequestHeader>
     `);
 
-    // Helper to run report for a given dateRangeType
     return await fetchAdManagerReportYesterday(userId, bearer, networkId);
   } catch (error) {
     console.error(" Error in fetchAdManagerReportYesterdayCron:", error);

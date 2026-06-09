@@ -61,8 +61,11 @@ app.use((err, req, res, next) => {
 // ========================
 // Start Server
 // ========================
-require("./cron/reportCron");
+const { initCrons } = require("./cron/reportCron");
+
 connectDB().then(() => {
+  initCrons();
+
   const server = app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
   });

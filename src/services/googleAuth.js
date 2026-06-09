@@ -81,7 +81,7 @@ async function fetchAndSaveSites(userId, accountId) {
             );
         }
 
-        return readySites;
+        return { saved: readySites.length };
 
     } catch (err) {
         console.error("Error fetching AdSense sites:", err.message);
